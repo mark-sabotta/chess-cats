@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<h1>Welcome!</h1>
+{% if not opponents %}
+<h4>Click below to get your opponents</h4>
+<form action="/getopponents">
+<button>Get Opponents</button>
+</form>
+{% else %}
+<h4>Send a challenge to each of your opponents below. If you win, report it to earn your picture!</h4>
+<div>
+    {% for opponent in opponents %}
+    <div>
+        {% if opponent.defeated = True %}
+        <img src = "/static/images/pic{% opponent.opponent_id %}.png">
+        {% else %}
+        <img src = "/static/images/blacksquare">
+        {% end if %}
+        <a href={% opponent.profile %}>{% opponent.opponent %}</a>
+        <br>
+        <form action="/reroll/{% opponent.id %}">Reroll Opponent</form>
+        <br>
+        <form action="/report/{% opponent.id %)">Report Victory</form>
+    </div>
+</div>
+{% endblock %}

@@ -1,26 +1,16 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField, validators
 from wtforms.validators import DataRequired, Email, Length
-import requests
+
+from functions import on_chess_com_validator, validate_username
 
 player_url = "https://api.chess.com/pub/player/"
-
-#def on_chess_com_validator(form, field):
-    #query_username = field.data.lower()
-    #response = requests.get(f"{player_url}{query_username}")
-    #if response.status_code == "404":
-        #raise validators.ValidationError("User not found")
-
-    #if response.status_code == "403":
-        #raise validators.ValidationError("Please try again later")
-    
-    
 
 
 class UserAddForm(FlaskForm):
     """Form for adding users."""
 
-    username = StringField('Username', validators=[DataRequired()])
+    username = StringField('Username', validators=[DataRequired(), on_chess_com_validator, validate_username])
     email = StringField('E-mail', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[Length(min=6)])
 

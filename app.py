@@ -4,10 +4,12 @@ from flask import Flask, render_template, request, flash, redirect, session, g, 
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
+from functions import bulk_pull_users
 from forms import UserAddForm, LoginForm
-from models import db, connect_db, User
+from models import db, connect_db, User, Opponent
 
 CURR_USER_KEY = "curr_user"
+BULK_USERS = []
 
 
 app = Flask(__name__)
@@ -33,6 +35,10 @@ def add_user_to_g():
     else:
         g.user = None
 
+def get_bulk():
+    """If bulk users not found, pulls users"""
+    if BULK_USERS not in session:
+        session[BULK_USERS] = bulk_pull_users()
 
 def do_login(user):
     """Log in user."""
@@ -46,7 +52,6 @@ def do_logout():
 
 
 
-
 @app.route('/login', methods=["GET", "POST"]) 
 def login():
     """Handle user login."""
@@ -55,7 +60,7 @@ def login():
 
     if form.validate_on_submit():
         user = User.authenticate(form.username.data,
-                                 form.password.data)
+                                form.password.data)
 
         if user:
             do_login(user)
@@ -78,11 +83,9 @@ def signup():
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
     form = UserAddForm()
-    print("hello")
 
     if form.validate_on_submit():
         try:
-            print("hello")
             user = User.signup(
                 username=form.username.data,
                 password=form.password.data,
@@ -114,6 +117,7 @@ def logout():
 @app.route('/')
 def show_opponents():
     """Show current and defeated opponents"""
+    get_bulk()
     if g.user:
         return render_template('home.html')
     else:

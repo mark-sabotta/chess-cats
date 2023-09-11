@@ -2,9 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField, validators
 from wtforms.validators import DataRequired, Email, Length
 
-from functions import on_chess_com_validator, validate_username
-
-player_url = "https://api.chess.com/pub/player/"
+from myvalidators import on_chess_com_validator, validate_username
 
 
 class UserAddForm(FlaskForm):

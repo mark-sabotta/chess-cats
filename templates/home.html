@@ -3,5 +3,31 @@
 
 {% block content %}
 <h1>Welcome!</h1>
-
+{% if not opponents %}
+<h4>Let's find your opponents!</h4>
+<form action="/get-opponents"><button>Get Opponents!</button></form>
+{% else %}
+<h4>Challenge your opponents below! When you defeat them, click report!</h4>
+{% for opp in opponents %}
+<div>
+    <img src = "/static/images/blacksquare.png"></img>
+    <br>
+    <a href="{{ opp.url }}">Challenge</a>
+    <form action="/reroll/{{ opp.strength }}"><button>Reroll</button></form>
+    <form action="/report/{{ opp.strength }}"><button>Report Victory</button></form>
+</div>
+{% endfor %}
+{% endif %}
+{% if not victories %}
+<h4>Your victories will be listed down below:</h4>
+{% else %}
+<h4>Past opponents:</h4>
+{% for victory in victories %}
+<div>
+    <img source = "/static/images/{{ victory.strength }}"></img>
+    <br>
+    <p>You defeated {{ victory.username }}</p>
+</div>
+{% endfor %}
+{% endif %}
 {% endblock %}

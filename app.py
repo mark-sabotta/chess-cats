@@ -1,15 +1,17 @@
 import os
-
-from flask import Flask, render_template, request, flash, redirect, session, g, abort
+from flask import Flask, render_template, request, flash, redirect, session, g, \
+    abort
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
-
-from functions import bulk_pull_users
+from sqlalchemy import desc, select
+from constants import REQUEST_HEADER, CHESS_BLITZ, PLAYER_URL, PLAYERS, LAST, \
+    RATING
+from apifunctions import bulk_pull_users, add_opponents_to_table, \
+    assign_opponents_to_user
 from forms import UserAddForm, LoginForm
-from models import db, connect_db, User, Opponent
+from models import db, connect_db, User, Opponent, User_Opponent, User_Victory
 
 CURR_USER_KEY = "curr_user"
-BULK_USERS = []
 
 
 app = Flask(__name__)
@@ -26,6 +28,7 @@ connect_db(app)
 with app.app_context():
     db.create_all()
 
+
 @app.before_request
 def add_user_to_g():
     """If we're logged in, add curr user to Flask global."""
@@ -35,10 +38,6 @@ def add_user_to_g():
     else:
         g.user = None
 
-def get_bulk():
-    """If bulk users not found, pulls users"""
-    if BULK_USERS not in session:
-        session[BULK_USERS] = bulk_pull_users()
 
 def do_login(user):
     """Log in user."""
@@ -117,21 +116,33 @@ def logout():
 @app.route('/')
 def show_opponents():
     """Show current and defeated opponents"""
-    get_bulk()
+    
     if g.user:
-        return render_template('home.html')
+        opponents_query = User_Opponent.list_opponents(
+            g.user).join(Opponent, User_Opponent.opponent_id == Opponent.id)
+        opponents_bulk = db.session.execute(opponents_query)
+        opponents = []
+        for opp in opponents_bulk:
+            opponents.append(opp[0])
+        victories_query = User_Victory.list_victories(
+            g.user).join(Opponent, User_Victory.opponent_id == Opponent.id)
+        victories_bulk = db.session.execute(victories_query)
+        victories = []
+        for vict in victories_bulk:
+            victories.append(vict[0])
+        print(opponents_query)
+        print(victories_query)
+
+        return render_template('home.html', opponents=opponents, victories=victories)
     else:
         return render_template('home-anon.html')
 
-#home route: pull list of active users
-#           update user_rating
-#           sample 30, request ratings
-#           sort by abs(ratings - user_rating)
-#           assign closest 6 as pieces
-#           sort 6 by true rating
-#           show transparent picture, challenge link, report link
+@app.route('/get-opponents')
+def get_opponents():
+    """Request opponents from API then add them to the table"""
 
-#report route: present report form (selection from pieces)
-#               request user games, cache
-#               look for piece as white or black
-#               if found, 
+    add_opponents_to_table(bulk_pull_users())
+    assign_opponents_to_user(db, g.user)
+    db.session.commit()
+    return redirect('/')
+

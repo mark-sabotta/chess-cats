@@ -4,11 +4,12 @@ from datetime import datetime
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 import requests
+from constants import PLAYER_URL, PLAYERS, REQUEST_HEADER, CHESS_BLITZ, \
+    LAST, RATING, URL
 
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
-player_url = "https://api.chess.com/pub/player/"
 
 
 class User(db.Model):
@@ -109,22 +110,40 @@ class Opponent(db.Model):
     )
 
     @classmethod
-    def get_opponent(cls, username):
-        details = requests.get(f"{player_url}{username}", headers={'User-Agent': 'mark.sabotta@gmail.com'})
-        profile = details.json()
-        stats = requests.get(f"{player_url}{username}/stats", headers={'User-Agent': 'mark.sabotta@gmail.com'})
-        ratings = stats.json()
+    def get_or_update_opponent(cls, username):
+        """Looks for opponent in database. If found updates rating, timestamp.
+        If opponent not found, creates and adds opponent"""
 
-        opponent = Opponent(
-            username=username,
-            url=profile['url'],
-            rating=ratings['chess_blitz']['last']['rating'],
-        )
+        profile = requests.get(f"{PLAYER_URL}{username}", 
+            headers=REQUEST_HEADER).json()
+        info = requests.get(f"{PLAYER_URL}{username}/stats",
+            headers=REQUEST_HEADER).json()
 
-        db.session.add(opponent)
+        #Not all players have a blitz rating
+        if CHESS_BLITZ not in info:
+            return 'none'
+
+        found_rating = info[CHESS_BLITZ][LAST][RATING]
+
+        #This scopes the opponent variable so it can be accessed later
+        opponent = 'none' 
+
+        if not cls.query.filter_by(username=username).first():
+            opponent = Opponent(
+                username=username,
+                url=profile[URL],
+                rating=found_rating
+            )
+
+            db.session.add(opponent)
+        else:
+            opponent = cls.query.filter_by(username=username).first()
+            opponent.rating = found_rating
+            opponent.timestamp = datetime.utcnow()
+
         return opponent
 
-
+    
 
 
 
@@ -148,7 +167,6 @@ class User_Opponent(db.Model):
         nullable=False,
     )
 
-
     strength = db.Column(
         db.Integer,
         nullable=False
@@ -159,7 +177,23 @@ class User_Opponent(db.Model):
         nullable=False,
         default=datetime.utcnow(),
     )
+    @classmethod
+    def match_opponent(cls, db, user_id, opponent_id, strength):
+        match = User_Opponent(
+            user_id = user_id,
+            opponent_id = opponent_id,
+            strength = strength,
+            timestamp = datetime.utcnow(),
+        )
+        print('hello')
+        print(match)
+        db.session.add(match)
 
+        return match
+
+    @classmethod
+    def list_opponents(cls, user):
+        return cls.query.filter_by(user_id = user.id)
 
 
 
@@ -177,6 +211,7 @@ class User_Victory(db.Model):
         nullable=False,
     )
 
+
     opponent_id = db.Column(
         db.Integer,
         db.ForeignKey('opponents.id', ondelete='CASCADE'),
@@ -189,6 +224,10 @@ class User_Victory(db.Model):
     )
 
     user = db.relationship('User')
+
+    @classmethod
+    def list_victories(cls, user):
+        return cls.query.filter_by(user_id = user.id)
 
 
 

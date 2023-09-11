@@ -3,6 +3,7 @@
 from datetime import datetime
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import relationship
 import requests
 from constants import PLAYER_URL, PLAYERS, REQUEST_HEADER, CHESS_BLITZ, \
     LAST, RATING, URL
@@ -167,6 +168,8 @@ class User_Opponent(db.Model):
         nullable=False,
     )
 
+    opponent = relationship("Opponent")
+
     strength = db.Column(
         db.Integer,
         nullable=False
@@ -179,16 +182,24 @@ class User_Opponent(db.Model):
     )
     @classmethod
     def match_opponent(cls, db, user_id, opponent_id, strength):
-        match = User_Opponent(
-            user_id = user_id,
-            opponent_id = opponent_id,
-            strength = strength,
-            timestamp = datetime.utcnow(),
-        )
-        print('hello')
-        print(match)
-        db.session.add(match)
+        
+        pairing_query = User_Opponent.query.filter_by(user_id=user_id,
+            strength=strength).first()
 
+        match = db.session.execute(pairing_query)
+
+        if match:
+            match.opponent_id = opponent_id
+        else:
+            match = User_Opponent(
+                user_id = user_id,
+                opponent_id = opponent_id,
+                strength = strength,
+                timestamp = datetime.utcnow(),
+            )
+            db.session.add(match)
+            
+        db.session.commit()
         return match
 
     @classmethod

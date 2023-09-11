@@ -12,7 +12,7 @@
 <div>
     <img src = "/static/images/blacksquare.png"></img>
     <br>
-    <a href="{{ opp.url }}">Challenge</a>
+    <a href="{{ opp.opponent.url }}">Challenge</a>
     <form action="/reroll/{{ opp.strength }}"><button>Reroll</button></form>
     <form action="/report/{{ opp.strength }}"><button>Report Victory</button></form>
 </div>

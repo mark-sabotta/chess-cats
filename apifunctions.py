@@ -5,7 +5,7 @@ from cacheout import Cache
 from sqlalchemy import update, select, desc
 from wtforms import validators
 from random import sample
-from models import User, Opponent, User_Opponent
+from models import User, Opponent, User_Opponent, User_Victory
 from constants import PLAYER_URL, BULK_URL, REQUEST_HEADER, CHESS_BLITZ, LAST,\
     RATING, PLAYERS
 
@@ -31,50 +31,107 @@ def add_opponents_to_table(list):
 
 
 
-def swap(list, a, b):
-    """Swaps 2 items in a list"""
-
-    c = list[a]
-    list[a] = list[b]
-    list[b] = c
 
 
+def get_lower_opponents(db, rating, count):
+    """Queries the db for a number of opponents rated lower than the user"""
 
-def assign_opponents_to_user(db, user):
-    """Gets blitz rating of user then finds opponents in table"""
-
-    user_profile = requests.get(f"{PLAYER_URL}{user.username}/stats", headers =
-        REQUEST_HEADER).json()
-    if CHESS_BLITZ not in user_profile:
-        user_rating = 450
-    else:
-        user_rating = user_profile[CHESS_BLITZ][LAST][RATING]
     lower_query = select(Opponent).order_by(
-        desc(Opponent.rating)).limit(3).where(Opponent.rating <= user_rating)
+        desc(Opponent.rating)).limit(count).where(Opponent.rating <= rating)
     lower_opponents = db.session.execute(lower_query)
     opponent_list = []
     for opponent in lower_opponents:
         opponent_list.append(opponent[0].id)
-    swap(opponent_list, 0, 2)
-    diff = 0
-    if len(opponent_list) < 3:
-        diff = 3 - len(opponent_list)
-    upper_query = select(Opponent).order_by(
-        Opponent.rating).limit(3 + diff).where(Opponent.rating > user_rating)
-    upper_opponents = db.session.execute(upper_query)
-    for opponent in upper_opponents:
-        opponent_list.append(opponent[0].id)
+        print(opponent[0])
+    print(opponent_list)
+    return opponent_list.reverse()
 
-    if len(opponent_list) < 6:
-        top_six = []
-        top_query = select(Opponent).order_by(
-            desc(Opponent.rating)).limit(6)
-        top_opponents = db.session.execute(top_query)
-        for opponent in top_opponents:
-            top_six.append(opponent[0].id)
-        opponent_list = top_six
+def get_upper_opponents(db, rating, count, list):
+    """Queries the db for a number of opponents rated higher than the user"""
+
+    upper_query = select(Opponent).order_by(
+        Opponent.rating).limit(count).where(Opponent.rating > rating)
+    upper_opponents = db.session.execute(upper_query)
+    
+    for opponent in upper_opponents:
+        list.append(opponent[0].id)
+    return list
+
+def get_user_rating(user):
+    """Requests the user's rating from Chess.com. 
+    If not blitz rated returns 450"""
+
+    user_profile = requests.get(f"{PLAYER_URL}{user.username}/stats", headers =
+        REQUEST_HEADER).json()
+    user_rating = 450
+    if CHESS_BLITZ in user_profile:
+        user_rating = user_profile[CHESS_BLITZ][LAST][RATING]
+    
+    return user_rating
+
+def generate_opponent_list(db, user, count):
+    """Combines lower and higher rated opponent lists to ensure 6 results"""
+
+    user_rating = get_user_rating(user)
+    opponent_list = get_lower_opponents(db, user_rating, 3)
+    #If there are not enough opponents lower rated, diff will ensure we still get 6 total
+    diff = 0
+    if opponent_list and len(opponent_list) < 3:
+        diff = count - len(opponent_list)
+    
+    opponent_list = get_upper_opponents(db, user_rating, diff, opponent_list)
+    if len(opponent_list) < count:
+        opponent_list = get_lower_opponents(db, user_rating, count)
+
+    return opponent_list
+
+def assign_opponents_to_user(db, user):
+    """Gets blitz rating of user then finds opponents in table"""
+
+    opponent_list = generate_opponent_list(db, user)
     
     for i in range(6):
         User_Opponent.match_opponent(db, user.id, opponent_list[i], i)
 
     return opponent_list
+
+def find_opponents(db, user):
+    """Queries and returns the matchings assigned to the user"""
+    opponents_query = User_Opponent.list_opponents(
+            user).join(Opponent, User_Opponent.opponent_id == Opponent.id)
+    opponents_bulk = db.session.execute(opponents_query)
+    opponents = []
+    for opp in opponents_bulk:
+        opponents.append(opp[0])
+
+    return opponents
+
+def find_victories(db, user):
+    """Queries and returns the recorded victories of the user"""
+
+    victories_query = User_Victory.list_victories(
+        user).join(Opponent, User_Victory.opponent_id == Opponent.id)
+    victories_bulk = db.session.execute(victories_query)
+    victories = []
+    for vict in victories_bulk:
+        victories.append(vict[0])
+
+    return victories
+
+def find_new_opponent(opponents, strength, pairings):
+    """Searches for an opponent not currently in the list of pairings"""
+
+    if opponents[strength] in pairings:
+        return find_new_opponent(opponents, (strength+1)%7, pairings)
+    else:
+        return opponents[strength]
+
+def reroll(db, user, pairings, strength):
+    """Selects 7 opponents and compares id's to ensure a new opponent"""
+
+    opponent_list = generate_opponent_list(db, user, 7)
+    new_opponent = find_new_opponent(opponent_list, strength, pairings)
+
+    User_Opponent.match_opponent(db, user.id, new_opponent.id, strength)
+    
+    return new_opponent

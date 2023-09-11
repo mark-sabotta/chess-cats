@@ -7,7 +7,7 @@ from sqlalchemy import desc, select
 from constants import REQUEST_HEADER, CHESS_BLITZ, PLAYER_URL, PLAYERS, LAST, \
     RATING
 from apifunctions import bulk_pull_users, add_opponents_to_table, \
-    assign_opponents_to_user
+    assign_opponents_to_user, find_opponents, find_victories, reroll
 from forms import UserAddForm, LoginForm
 from models import db, connect_db, User, Opponent, User_Opponent, User_Victory
 
@@ -118,20 +118,8 @@ def show_opponents():
     """Show current and defeated opponents"""
     
     if g.user:
-        opponents_query = User_Opponent.list_opponents(
-            g.user).join(Opponent, User_Opponent.opponent_id == Opponent.id)
-        opponents_bulk = db.session.execute(opponents_query)
-        opponents = []
-        for opp in opponents_bulk:
-            opponents.append(opp[0])
-        victories_query = User_Victory.list_victories(
-            g.user).join(Opponent, User_Victory.opponent_id == Opponent.id)
-        victories_bulk = db.session.execute(victories_query)
-        victories = []
-        for vict in victories_bulk:
-            victories.append(vict[0])
-        print(opponents_query)
-        print(victories_query)
+        opponents = find_opponents(db, g.user)
+        victories = find_victories(db, g.user)
 
         return render_template('home.html', opponents=opponents, victories=victories)
     else:
@@ -140,9 +128,25 @@ def show_opponents():
 @app.route('/get-opponents')
 def get_opponents():
     """Request opponents from API then add them to the table"""
-
-    add_opponents_to_table(bulk_pull_users())
-    assign_opponents_to_user(db, g.user)
-    db.session.commit()
+    if g.user:
+        add_opponents_to_table(bulk_pull_users())
+        assign_opponents_to_user(db, g.user)
+        db.session.commit()
+    else:
+        flash('You must be logged in to view this page', 'danger')
     return redirect('/')
 
+
+@app.route('/reroll/<int:strength>')
+def reroll_opponent(strength):
+
+    if g.user:
+        opponents = find_opponents(db, g.user)
+        if not opponents:
+            return redirect("/get-opponents")
+        else:
+            reroll(db, g.user, opponents, strength)
+            return redirect("/")
+
+    else:
+        flash('You must be logged in to view this page', 'danger')

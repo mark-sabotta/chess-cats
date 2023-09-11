@@ -42,9 +42,8 @@ def get_lower_opponents(db, rating, count):
     opponent_list = []
     for opponent in lower_opponents:
         opponent_list.append(opponent[0].id)
-        print(opponent[0])
-    print(opponent_list)
-    return opponent_list.reverse()
+    opponent_list.reverse()
+    return opponent_list
 
 def get_upper_opponents(db, rating, count, list):
     """Queries the db for a number of opponents rated higher than the user"""

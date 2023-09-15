@@ -8,15 +8,17 @@
 <form action="/get-opponents"><button>Get Opponents!</button></form>
 {% else %}
 <h4>Challenge your opponents below! When you defeat them, click report!</h4>
+<div>
 {% for opp in opponents %}
 <div>
     <img src = "/static/images/blacksquare.png"></img>
     <br>
-    <a href="{{ opp.opponent.url }}">Challenge</a>
+    <a href="{{ opp.opponent.url }}">Challenge {{ opp.opponent.username }}</a>
     <form action="/reroll/{{ opp.strength }}"><button>Reroll</button></form>
     <form action="/report/{{ opp.strength }}"><button>Report Victory</button></form>
 </div>
 {% endfor %}
+</div>
 {% endif %}
 {% if not victories %}
 <h4>Your victories will be listed down below:</h4>

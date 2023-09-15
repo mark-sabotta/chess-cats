@@ -1,13 +1,13 @@
 from datetime import datetime
 import requests
-from flask import session
+from flask import session, flash
 from cacheout import Cache
 from sqlalchemy import update, select, desc
 from wtforms import validators
 from random import sample
 from models import User, Opponent, User_Opponent, User_Victory
 from constants import PLAYER_URL, BULK_URL, REQUEST_HEADER, CHESS_BLITZ, LAST,\
-    RATING, PLAYERS
+    RATING, PLAYERS, WHITE, USERNAME, URL, GAMES, BLACK, RESULT
 
 cache = Cache()
 
@@ -130,7 +130,32 @@ def reroll(db, user, pairings, strength):
 
     opponent_list = generate_opponent_list(db, user, 7)
     new_opponent = find_new_opponent(opponent_list, strength, pairings)
-
-    User_Opponent.match_opponent(db, user.id, new_opponent.id, strength)
+    
+    User_Opponent.match_opponent(db, user.id, new_opponent, strength)
     
     return new_opponent
+
+
+def check_victory(strength, user, opponent, year, month):
+    "Requests game history of the user to check for victory over opponent"
+
+    request = requests.get(f"{PLAYER_URL}{user.username}/{GAMES}/{year}/{month}",
+        headers=REQUEST_HEADER)
+    games = request.json()[GAMES] 
+    if not games:
+        flash("No games found", "danger")
+        return False
+
+    for game in games:
+        white = game[WHITE][USERNAME].lower()
+        black = game[BLACK][USERNAME].lower()
+
+    if white == opponent.username or black == opponent.username:
+        if (white == opponent.username and game[BLACK][RESULT] == "win") or (white != opponent.username and game[WHITE][RESULT] == "win"):
+            User_Victory.add_user_victory(user.id, opponent.id, strength)
+            flash ("Congratulations!", "success")
+            return True
+	
+
+    flash("Game not found", "danger")
+    return False

@@ -7,8 +7,9 @@ from sqlalchemy import desc, select
 from constants import REQUEST_HEADER, CHESS_BLITZ, PLAYER_URL, PLAYERS, LAST, \
     RATING
 from apifunctions import bulk_pull_users, add_opponents_to_table, \
-    assign_opponents_to_user, find_opponents, find_victories, reroll
-from forms import UserAddForm, LoginForm
+    assign_opponents_to_user, find_opponents, find_victories, reroll, \
+    check_victory
+from forms import UserAddForm, LoginForm, ReportForm
 from models import db, connect_db, User, Opponent, User_Opponent, User_Victory
 
 CURR_USER_KEY = "curr_user"
@@ -150,3 +151,22 @@ def reroll_opponent(strength):
 
     else:
         flash('You must be logged in to view this page', 'danger')
+
+
+@app.route('/report/<int:strength>', methods=["GET", "POST"])
+def render_report_form(strength):
+    """Show the form to report the user's victory"""
+    form = ReportForm()
+    user = g.user
+    match = User_Opponent.get_user_opponent(db, user.id, strength)
+    opponent = Opponent.query.get(match[0].opponent_id)
+
+    if form.validate_on_submit():
+        year = form.year.data
+        month = form.month.data
+        if check_victory(strength, user, opponent, year, month):
+            return redirect(f'/reroll/{strength}')
+        else:
+            return redirect(f'/report/{strength}')
+    else:
+        return render_template("report.html", form = form, opponent = opponent)

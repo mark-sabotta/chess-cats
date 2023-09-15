@@ -183,10 +183,9 @@ class User_Opponent(db.Model):
     @classmethod
     def match_opponent(cls, db, user_id, opponent_id, strength):
         
-        pairing_query = User_Opponent.query.filter_by(user_id=user_id,
+        match = User_Opponent.query.filter_by(user_id=user_id,
             strength=strength).first()
 
-        match = db.session.execute(pairing_query)
 
         if match:
             match.opponent_id = opponent_id
@@ -198,13 +197,22 @@ class User_Opponent(db.Model):
                 timestamp = datetime.utcnow(),
             )
             db.session.add(match)
-            
+
         db.session.commit()
         return match
 
     @classmethod
     def list_opponents(cls, user):
         return cls.query.filter_by(user_id = user.id)
+
+    @classmethod
+    def get_user_opponent(cls, db, user_id, strength):
+        query = cls.query.filter_by(user_id = user_id).filter_by(strength=strength)
+        results = db.session.execute(query)
+        list = []
+        for res in results:
+            list.append(res[0])
+        return list
 
 
 
@@ -239,6 +247,17 @@ class User_Victory(db.Model):
     @classmethod
     def list_victories(cls, user):
         return cls.query.filter_by(user_id = user.id)
+
+    @classmethod
+    def add_user_victory(cls, user_id, opponent_id, strength):
+        victory = User_Victory(
+            user_id = user_id,
+            opponent_id = opponent_id,
+            strength = strength
+        )
+
+        db.session.add(victory)
+        return victory
 
 
 

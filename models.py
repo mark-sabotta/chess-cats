@@ -168,7 +168,7 @@ class User_Opponent(db.Model):
         nullable=False,
     )
 
-    opponent = relationship("Opponent")
+    opponent = db.relationship("Opponent")
 
     strength = db.Column(
         db.Integer,
@@ -241,7 +241,7 @@ class User_Victory(db.Model):
         db.Integer,
         nullable = False
     )
-
+    opponent = db.relationship('Opponent')
     user = db.relationship('User')
 
     @classmethod

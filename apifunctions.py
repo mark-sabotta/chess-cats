@@ -1,5 +1,6 @@
 from datetime import datetime
 import requests
+import threading
 from flask import session, flash
 from cacheout import Cache
 from sqlalchemy import update, select, desc
@@ -20,16 +21,13 @@ def bulk_pull_users():
     return response.json()[PLAYERS]
 
 
-
 def add_opponents_to_table(list):
     """Samples 30 from list, checks if already in table, 
     then updates/adds opponents in sample to table"""
-
+    
     working_list = sample(list, 30)
     for opp in working_list:
         Opponent.get_or_update_opponent(opp)
-
-
 
 
 

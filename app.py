@@ -11,6 +11,8 @@ from apifunctions import bulk_pull_users, add_opponents_to_table, \
     check_victory
 from forms import UserAddForm, LoginForm, ReportForm
 from models import db, connect_db, User, Opponent, User_Opponent, User_Victory
+import threading
+
 
 CURR_USER_KEY = "curr_user"
 
@@ -38,6 +40,8 @@ def add_user_to_g():
         
     else:
         g.user = None
+
+add_opponents_to_table(bulk_pull_users())
 
 
 def do_login(user):
@@ -130,7 +134,6 @@ def show_opponents():
 def get_opponents():
     """Request opponents from API then add them to the table"""
     if g.user:
-        add_opponents_to_table(bulk_pull_users())
         assign_opponents_to_user(db, g.user)
         db.session.commit()
     else:

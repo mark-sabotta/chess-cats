@@ -8,7 +8,7 @@ from constants import REQUEST_HEADER, CHESS_BLITZ, PLAYER_URL, PLAYERS, LAST, \
     RATING
 from apifunctions import bulk_pull_users, add_opponents_to_table, \
     assign_opponents_to_user, find_opponents, find_victories, reroll, \
-    check_victory
+    check_victory, players_list
 from forms import UserAddForm, LoginForm, ReportForm
 from models import db, connect_db, User, Opponent, User_Opponent, User_Victory
 import threading
@@ -41,8 +41,7 @@ def add_user_to_g():
     else:
         g.user = None
 
-add_opponents_to_table(bulk_pull_users())
-
+threading.Timer(43200, bulk_pull_users).start()
 
 def do_login(user):
     """Log in user."""

@@ -10,15 +10,18 @@ from models import User, Opponent, User_Opponent, User_Victory
 from constants import PLAYER_URL, BULK_URL, REQUEST_HEADER, CHESS_BLITZ, LAST,\
     RATING, PLAYERS, WHITE, USERNAME, URL, GAMES, BLACK, RESULT
 
-cache = Cache()
-
+cache = Cache(ttl = 432000)
+players_list = []
 #######User and Opponent API call functions######
 @cache.memoize()
 def bulk_pull_users():
     """Requests and returns 10000 users"""
 
-    response = requests.get(BULK_URL, headers = REQUEST_HEADER)
-    return response.json()[PLAYERS]
+    response = requests.get_or_404(BULK_URL, headers = REQUEST_HEADER)
+    player_list = response.json()[PLAYERS]
+    return player_list
+
+
 
 
 def add_opponents_to_table(list):

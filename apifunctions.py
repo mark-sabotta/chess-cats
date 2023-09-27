@@ -1,14 +1,13 @@
-from datetime import datetime
+
 import requests
-import threading
-from flask import session, flash
+from flask import flash
 from cacheout import Cache
-from sqlalchemy import update, select, desc
-from wtforms import validators
+from sqlalchemy import select, desc
 from random import sample
-from models import User, Opponent, User_Opponent, User_Victory
+from models import Opponent, User_Opponent, User_Victory
+from messages import NO_GAMES, CONGRATS, GAME_NOT_IN_GAMES
 from constants import PLAYER_URL, BULK_URL, REQUEST_HEADER, CHESS_BLITZ, LAST,\
-    RATING, PLAYERS, WHITE, USERNAME, URL, GAMES, BLACK, RESULT
+    RATING, PLAYERS, WHITE, USERNAME, GAMES, BLACK, RESULT
 
 cache = Cache(ttl = 432000)
 players_list = []
@@ -34,11 +33,13 @@ def add_opponents_to_table(list):
 
 
 
-def get_lower_opponents(db, rating, count):
+def get_lower_opponents(db, rating, username, count):
     """Queries the db for a number of opponents rated lower than the user"""
 
     lower_query = select(Opponent).order_by(
-        desc(Opponent.rating)).limit(count).where(Opponent.rating <= rating)
+        desc(Opponent.rating)).limit(count).where(
+            Opponent.rating <= rating).where(Opponent.username != username)
+
     lower_opponents = db.session.execute(lower_query)
     opponent_list = []
     for opponent in lower_opponents:
@@ -46,11 +47,12 @@ def get_lower_opponents(db, rating, count):
     opponent_list.reverse()
     return opponent_list
 
-def get_upper_opponents(db, rating, count, list):
+def get_upper_opponents(db, rating, count, username, list):
     """Queries the db for a number of opponents rated higher than the user"""
 
     upper_query = select(Opponent).order_by(
-        Opponent.rating).limit(count).where(Opponent.rating > rating)
+        Opponent.rating).limit(count).where(
+            Opponent.rating > rating).where(Opponent.username != username)
     upper_opponents = db.session.execute(upper_query)
     
     for opponent in upper_opponents:
@@ -73,7 +75,7 @@ def generate_opponent_list(db, user, count):
     """Combines lower and higher rated opponent lists to ensure 6 results"""
 
     user_rating = get_user_rating(user)
-    opponent_list = get_lower_opponents(db, user_rating, 3)
+    opponent_list = get_lower_opponents(db, user_rating, user.username, 3)
     #If there are not enough opponents lower rated, diff will ensure we still get 6 total
     diff = 0
     if opponent_list and len(opponent_list) < 3:
@@ -144,7 +146,7 @@ def check_victory(strength, user, opponent, year, month):
         headers=REQUEST_HEADER)
     games = request.json()[GAMES] 
     if not games:
-        flash("No games found", "danger")
+        flash(NO_GAMES, "danger")
         return False
 
     for game in games:
@@ -154,9 +156,9 @@ def check_victory(strength, user, opponent, year, month):
     if white == opponent.username or black == opponent.username:
         if (white == opponent.username and game[BLACK][RESULT] == "win") or (white != opponent.username and game[WHITE][RESULT] == "win"):
             User_Victory.add_user_victory(user.id, opponent.id, strength)
-            flash ("Congratulations!", "success")
+            flash (CONGRATS, "success")
             return True
 	
 
-    flash("Game not found", "danger")
+    flash(GAME_NOT_IN_GAMES, "danger")
     return False

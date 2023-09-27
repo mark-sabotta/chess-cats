@@ -1,0 +1,8 @@
+INVALID_LOGIN = "Invalid credentials."
+USERNAME_TAKEN = "Username already taken"
+LOGOUT = "Logged out!"
+MUST_LOGIN = "You must be logged in to view this page"
+GREETING = "Hello"
+NO_GAMES = "No games for this user found"
+CONGRATS = "Congratulations!"
+GAME_NOT_IN_GAMES = "Game not found in user games"

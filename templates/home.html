@@ -14,9 +14,8 @@
     <img src = "/static/images/blacksquare.png"></img>
     <br>
     <form action="{{ opp.opponent.url }}">
-        <button>Challenge {{ opp.opponent.username }}</button> 
+        <button class = "btn btn-info">Challenge {{ opp.opponent.username }}</button> 
     </form>
-    <br>
     <form action="/reroll/{{ opp.strength }}">
         <button class = "btn btn-info">Reroll</button>
     </form>

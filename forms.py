@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SelectField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, NumberRange
 
-from myvalidators import on_chess_com_validator, validate_username
+from dbvalidators import on_chess_com_validator, validate_username
 
 
 class UserAddForm(FlaskForm):

@@ -1,16 +1,12 @@
 import os
-from flask import Flask, render_template, request, flash, redirect, session, g, \
-    abort
-from flask_debugtoolbar import DebugToolbarExtension
+from flask import Flask, render_template, flash, redirect, session, g
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import desc, select
-from constants import REQUEST_HEADER, CHESS_BLITZ, PLAYER_URL, PLAYERS, LAST, \
-    RATING
-from apifunctions import bulk_pull_users, add_opponents_to_table, \
-    assign_opponents_to_user, find_opponents, find_victories, reroll, \
-    check_victory, players_list
+from messages import INVALID_LOGIN, USERNAME_TAKEN, LOGOUT, MUST_LOGIN, \
+    GREETING
+from apifunctions import bulk_pull_users, assign_opponents_to_user, \
+    find_opponents, find_victories, reroll, check_victory
 from forms import UserAddForm, LoginForm, ReportForm
-from models import db, connect_db, User, Opponent, User_Opponent, User_Victory
+from models import db, connect_db, User, Opponent, User_Opponent
 import threading
 
 
@@ -67,10 +63,10 @@ def login():
 
         if user:
             do_login(user)
-            flash(f"Hello, {user.username}!", "success")
+            flash(f"{GREETING}, {user.username}!", "success")
             return redirect("/")
 
-        flash("Invalid credentials.", 'danger')
+        flash(INVALID_LOGIN, 'danger')
 
     return render_template('login.html', form=form)
 
@@ -97,7 +93,7 @@ def signup():
             db.session.commit()
 
         except IntegrityError:
-            flash("Username already taken", 'danger')
+            flash(USERNAME_TAKEN, 'danger')
             return render_template('signup.html', form=form)
 
         do_login(user)
@@ -113,7 +109,7 @@ def logout():
 
     do_logout()
 
-    flash("Logged out!", "success")
+    flash(LOGOUT, "success")
     return redirect('/login')
 
 
@@ -136,7 +132,7 @@ def get_opponents():
         assign_opponents_to_user(db, g.user)
         db.session.commit()
     else:
-        flash('You must be logged in to view this page', 'danger')
+        flash(MUST_LOGIN, 'danger')
     return redirect('/')
 
 
@@ -152,7 +148,7 @@ def reroll_opponent(strength):
             return redirect("/")
 
     else:
-        flash('You must be logged in to view this page', 'danger')
+        flash(MUST_LOGIN, 'danger')
 
 
 @app.route('/report/<int:strength>', methods=["GET", "POST"])

@@ -90,7 +90,7 @@ def generate_opponent_list(db, user, count):
 def assign_opponents_to_user(db, user):
     """Gets blitz rating of user then finds opponents in table"""
 
-    opponent_list = generate_opponent_list(db, user)
+    opponent_list = generate_opponent_list(db, user, 6)
     
     for i in range(6):
         User_Opponent.match_opponent(db, user.id, opponent_list[i], i)

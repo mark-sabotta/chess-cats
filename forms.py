@@ -8,14 +8,14 @@ from dbvalidators import on_chess_com_validator, validate_username
 class UserAddForm(FlaskForm):
     """Form for adding users."""
 
-    username = StringField('Username', validators=[DataRequired(), on_chess_com_validator, validate_username])
+    username = StringField('Chess.com Username', validators=[DataRequired(), on_chess_com_validator, validate_username])
     email = StringField('E-mail', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[Length(min=6)])
 
 class LoginForm(FlaskForm):
     """Login form."""
 
-    username = StringField('Username', validators=[DataRequired()])
+    username = StringField('Chess.com Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[Length(min=6)])
 
 class ReportForm(FlaskForm):

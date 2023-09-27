@@ -239,7 +239,7 @@ nav+.container {
 
 /* ============================ Signed out home */
 
-.home-hero {
+.home {
   height: 100vh;
   display: flex;
   justify-content: center;
@@ -258,18 +258,18 @@ nav+.container {
   text-shadow: 0 0 8px #66757f;
 }
 
-.home-hero .btn {
+.home .btn {
   text-shadow: none;
   position: relative;
   z-index: 1;
   width: 150px;
 }
 
-.home-hero h1 {
+.home h1 {
   margin-bottom: 4rem;
 }
 
-.home-hero:before {
+.home:before {
   content: "";
   position: absolute;
   top: 0;

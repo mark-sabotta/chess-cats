@@ -75,15 +75,16 @@ def generate_opponent_list(db, user, count):
     """Combines lower and higher rated opponent lists to ensure 6 results"""
 
     user_rating = get_user_rating(user)
-    opponent_list = get_lower_opponents(db, user_rating, user.username, 3)
+    username = user.username
+    opponent_list = get_lower_opponents(db, user_rating, username, 3)
     #If there are not enough opponents lower rated, diff will ensure we still get 6 total
     diff = 0
     if opponent_list and len(opponent_list) < 3:
         diff = count - len(opponent_list)
     
-    opponent_list = get_upper_opponents(db, user_rating, diff, opponent_list)
+    opponent_list = get_upper_opponents(db, user_rating, username, diff, opponent_list)
     if len(opponent_list) < count:
-        opponent_list = get_lower_opponents(db, user_rating, count)
+        opponent_list = get_lower_opponents(db, user_rating, username, count)
 
     return opponent_list
 

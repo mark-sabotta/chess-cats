@@ -5,7 +5,9 @@
 <h1>Welcome!</h1>
 {% if not opponents %}
 <h4>Let's find your opponents!</h4>
-<form action="/get-opponents"><button>Get Opponents!</button></form>
+<form action="/get-opponents">
+    <button class = "btn btn-primary">Get Opponents!</button>
+</form>
 {% else %}
 <h4>Challenge your opponents below! When you defeat them, click report!</h4>
 <div class = "grid-container">

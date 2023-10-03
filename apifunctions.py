@@ -82,7 +82,7 @@ def generate_opponent_list(db, user, count):
     if opponent_list and len(opponent_list) < 3:
         diff = count - len(opponent_list)
     
-    opponent_list = get_upper_opponents(db, user_rating, username, diff, opponent_list)
+    opponent_list = get_upper_opponents(db, user_rating, diff, username, opponent_list)
     if len(opponent_list) < count:
         opponent_list = get_lower_opponents(db, user_rating, username, count)
 

@@ -1,7 +1,6 @@
 # Chess Cats
 ### A minigame for chess.com users who like challenges and cats
-#### Currently hosted at:
-https://chess-cats.onrender.com/
+#### This site can no longer be hosted due to a lack of support for the tools used to develop it
 
 ## Description:
 This application provides users with a small and rewarding set of challenges. Users are randomly assigned to challenge online members of chess.com with similar ratings to their own. When a user defeats their assigned opponent and reports it through the application, they are rewarded with a chess inspired cat picture for their homepage. The 6 opponents correspond to each unique piece on the chess board. The design intends to provide users with smaller attainable goals which can be more encouraging than the goals a user might set for themselves, while still providing adequate challenge, and rewarding players more for more difficult challenges. In this case, the opponent corresponding to the queen piece will be the highest rated, but the picture reward is one of the most spectacular.
